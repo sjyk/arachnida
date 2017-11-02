@@ -1,0 +1,152 @@
+\section{Problem Definition}
+First, we overview the basic formalism of \sys and present its relationship to related work.
+
+\subsection{Data Transformations}
+We focus on data transformations that concern a single relational table. 
+Let $R$ be a relation over a set of attributes $A$,  $\mathcal{R}$ denote the set of all possible relations over $A$, and $r.a$ be the attribute value of $a \in A$ for row $r \in R$.
+A data transformation $T(R): \mathcal{R} \mapsto \mathcal{R}$ maps an input relation instance $R \in \mathcal{R}$ to a new (possibly cleaner) instance $R' \in \mathcal{R}$ that is union compatible with $R$.  For instance, ``replace all \texttt{city} attribute values equal to {\it San Francisco} with {\it SF}'' may be one data transformation, while ``delete the $10^{th}$ record'' may be another.   
+Aside from union compatibility, transformations are simply UDFs.
+
+%We find that nearly all cleaning transformations in existing literature satisfy these properties \ewu{(See Appendix of technical report)}. 
+
+Data transformations can be composed using the binary operator $\circ$ as follows: $(T_i \circ T_j)(R) =  T_i(T_j(R))$.
+The composition of one or more data transformations is called a {\it transformation program} $p$.   If $p = p' \circ T$, then $p'$ is the parent of $p$; the parent of a single data transformation is a NOOP.  In practice, users will specify {\it transformation templates} $\mathbb{T}(\theta_1,\cdots,\theta_k)$, and every assignment of the parameters represents one possible transformation.  
+Although $\mathbb{T}$ can in theory be an arbitrary deterministic template function, our current implementation makes several simplifying assumptions to bound the number of data transformations that it can output.  We assume that a parameter $\theta_i$ is typed as an attribute or a value.  The former means that $\theta_i$'s domain is the set of attribute names in the relation schema; the latter means that $\theta_i$'s domain is the set of cell values found in the relation, or otherwise provided by the user. 
+
+\begin{example}\label{ex1}
+The following \texttt{City} relation contains two attributes \textsf{city\_name} and \textsf{city\_code}.  Suppose there is a one-to-one relationship between the two attributes. In this case, the relation is inconsistent with respect to the relationship and contains errors highlighted in \red{red}.
+
+  \begin{table}[ht!]
+	\small
+  \centering
+  \label{my-label}
+  \begin{tabular}{|l|l|l|}
+  \hline
+  \rowcolor[HTML]{000000} 
+  & \white{city\_name}            & \white{city\_code}   \\ \hline
+  1 & San Francisco                    & SF                                  \\ \hline
+  2& \red{\textbf{New York}}           & NY                                  \\ \hline
+  3 & New York City                    & \red{\textbf{NYC}} \\ \hline
+  4 & \red{\textbf{San Francisc}}      & SF                                  \\ \hline
+  5 & San Jose                         & SJ                                  \\ \hline
+  6 & San Mateo                        & SM                                  \\ \hline
+  7 & New York City                    & NY                                  \\ \hline
+  \end{tabular}
+  \end{table}
+
+The following transformation template uses three parameters: \texttt{attr} specifies an attribute, \texttt{srcstr} specifies a source string, and \texttt{targetstr} specifies a target string.   
+{\small\[
+T = \textsf{find\_replace}(\text{srcstr}, \text{targetstr}, \text{attr})
+\]}
+The output of the above is a transformation $T$ that finds all \texttt{attr} values equal to \texttt{srcstr} and replaces those cells with \texttt{targetstr}. 
+For instance, \texttt{find\_replace(``NYC'', ``NY'', ``city\_code'')(City)} returns a data transformation that finds records in \texttt{City} whose city\_code is ``NYC'' and replaces their value with ``NY''.
+\end{example}
+
+
+Let $\Sigma$ be a set of distinct data transformations $\{T_1,\cdots,T_N\}$, and
+$\Sigma^*$ be the set of all finite compositions of $\Sigma$, i.e., $T_i\circ T_j$.
+A formal language $L$ over $\Sigma$ is a subset of $\Sigma^*$.
+A program $p$ is valid if it is an element of $L$.
+
+\begin{example}\label{ex2}
+  Continuing \Cref{ex1}, $\Sigma$ is defined as all possible parameterizations of \texttt{find\_replace}.  Since many possible possible parameterizations are non-sensical (e.g., the source string does not exist in the relation), we may bound $\Sigma$ to only source and target strings present in each attribute's instance domain (a standard assumption in other work as well~\cite{DBLP:series/synthesis/2012Fan}).  In this case, there are $61$ possible data transformations, and $\Sigma^*$ defines any finite composition of these $61$ transformations.  The language $L$ can be further restricted to compositions of up to $k$ data transformations.  
+\end{example}
+
+Finally, let $Q(R): \mathcal{R} \mapsto [0,1]$ be a quality function where $1$ implies that the instance $R$ has no anomalies, and a lower value correspond to a more anomalies table.
+Since running a program $p\in\mathcal{L}$ on the initial dirty table $R_{dirty}$ returns another table, $Q(p(R_{dirty}))$ returns a quality score for each program in the language.  
+$Q$ is a UDF and we do not impose any restrictions on it. In fact, one experiment embeds training and evaluating a machine learning model {\it within} the quality function (\Cref{s:expquant}).  Another experiment shows that \sys can be robust to random noise injected in the function (\Cref{s:expoverfit}).   
+
+Even so, we call out two special cases that provide optimization opportunities. 
+We define two sub-classes of quality functions: row-separable and cell-separable quality functions.
+The former expresses the overall quality based on row-wise quality function $q(r): R \mapsto [0,1]$ where $1$ implies that the record is clean:
+$Q(R) \propto \sum\nolimits_{r \in R} q(r)$
+Similarly, a cell-separable quality function means that there exists a cell-wise quality function $q(r, a): (R\times A) \mapsto [0,1]$, such that the quality function is the sum of each cell's quality: 
+$Q(R) \propto \sum\nolimits_{r \in R} \sum_{a \in A} q(r,a)$.
+
+These special cases are important because they can define hints on what types of transformations are irrelevant.
+For example, if the quality function is cell-separable, and we have identified that a set of cells $C$ are dirty (e.g., they violate constraints), then we can ignore transformations that do not modify cells in $C$.  This restricts the size the language and makes the problem much easier to solve.
+
+
+\noindent We are now ready to present data cleaning as the following optimization problem:
+\begin{problem}[$\textsf{clean}(Q,R_{dirty},L)$]
+Given quality function $Q$, relation $R_{dirty}$, and language $L$, find valid program $p^* \in L$ that optimizes $Q$:
+\[
+p^* = ~ \max_{p \in L} Q( p(R_{dirty}) ).  
+\]
+\end{problem}
+$p^*(R_{dirty})$ returns the cleaned table, and $p^*$ can be applied to any table that is union compatible with $R_{dirty}$.
+A desirable property of this problem formulation is that it directly trades off runtime with cleaning accuracy and can be stopped at any time (though the cleaning program may be suboptimal).  At the limit, \sys simply explores $L$ and identifies the optimal program.
+
+
+\begin{example}\label{ex3}
+Continuing~\Cref{ex1}, let us assume the following functional dependencies over the example relation: $\textsf{city\_name} \rightarrow \textsf{city\_code}$ and $\textsf{city\_code} \rightarrow \textsf{city\_name}$.
+We can efficiently identify inconsistencies by finding the cities that map to $>1$ city code, and vice versa.   Let such city names and codes be denoted $D_{city\_name}$ and $D_{city\_code}$, respectively.
+$Q(R)$ is a cell-separable quality function where the cell-wise quality function is defined as $q(r, a) = 1 - (r.a \in D_a)$, such that $r.a$ is $1$ if the attribute value does not violate a functional dependency, and $0$ otherwise.
+
+By searching through all possible programs up to length 3 in $L$, we can find a cleaning program based on \texttt{find\_replace} that resolves all inconsistencies:
+\begin{lstlisting}
+    find_replace(New York, New York City, city_name)
+    find_replace(San Francisc, San Francisco, city_name)
+    find_replace(NYC, NY, city_code)
+\end{lstlisting}
+\end{example}
+
+
+\subsection{Problem Expressiveness}\label{s:probexpressiveness}
+
+\subsection{Case Studies}
+\textbf{TODO}
+
+\subsection{Approach Overview and Challenges}
+Our problem formulation is a direct instance of {\it planning} in AI~\cite{russell1995modern}, where an agent identifies a sequence of actions to achieve a goal.  In our setting, the agent (\sys) explores a state space ($\mathcal{R}$) from an initial state (the input relation) by following transitions (applying $T_i \in \Sigma$) such that the sequence of actions is valid (within $\Sigma^*$) and the quality of the final state ($Q(R_{final})$) is maximized.  
+
+For readers familiar with stochastic processes, this search problem is equivalent to a deterministic Markov Decision Process (MDP), where the states are $\mathcal{R}$, the actions $\Sigma$, the transition function updates the instance with the transformation, the initial state is the dirty instance $R_{dirty}$, and the reward function is $Q$.
+
+One may be hesitant in adopting our problem formulation because, although it is sufficiently general to model many existing data cleaning problems, such generality often comes at the expense of runtime performance.   The planning problem is APX-Hard, meaning there does not exist a polynomial time approximation unless P=NP.  
+Let $R$ be a single-attribute relation of Booleans. Let $L$ be the set of all assignments to a single value.
+Given a list of $N$ Boolean clauses over all the boolean variables, let $Q$ assign to each record one minus the fraction of clauses that evaluate to true. This formulation is equivalent to MAX-SAT and solution to the optimization problem. 
+
+Despite the problem's worst-case complexity, 
+recent successes in similar planning problems---ranging from AlphaGo~\cite{silver2016mastering} to automatically playing Atari video games~\cite{mnih2015human} have shown that a prudent combination Machine Learning and distributed search can find practical solutions by leveraging the structure of the problem. 
+Not every problem instance is as pathological as the worst case complexity suggests, and there are many reasonable local optima.
+
+
+
+
+
+
+
+
+
+\if{0}
+    Every data cleaning problem in \sys is specified by a deterministic finite automaton (DFA). 
+    A DFA is a 5-tuple:
+    \[\langle S, A, \delta, s_0\rangle,\]
+    where $S$ is a set of states that the process can be in, $A$ is a set of inputs that the process can take, $\delta$ is a transition function that takes as input a state and an input and transitions the process to the next state in $S$, and $s_0$ is an initial state of the process.
+
+    The set of relations and the language of transformations defines a DFA:
+    \[\langle \mathcal{R}, \Sigma, \delta, R_{dirty}\rangle, \]
+    where the states $\mathcal{R}$ is the set of possible instances, the inputs are transformations from $\Sigma$, the transition function updates the instance with the transformation, and the initial state is the dirty instance $R_{dirty}$. Search problems can be defined over the DFA. 
+    A quality function $Q$ maps an instance $R$ to a scalar where 1 implies it is clean:
+    \[
+    Q: \mathcal{R} \mapsto [0,1]
+    \]
+    A separable quality function is one that can be expressed as an average over cell-wise quality metrics $q(r,a)$ where 1 implies clean:
+    \[
+    Q(R) \propto \sum_{r \in R} \sum_{a \in A} q(r,a)
+    \]
+
+    Note that in contrast to traditional programming-by-example problems~\cite{}, which take as input a well defined input and goal state, the latter is not present in our problem formulation.  It is replaced with a quality function that we seek to maximize.  This is an important distinction because (1) it models the uncertain nature of data cleaning, where the ground truth is typically not available~\cite{}, and (2) necessarily greedy.
+
+    \vspace{0.5em} \noindent \textbf{Remark 1: } 
+
+
+
+\fi
+
+
+
+
+
+
+
