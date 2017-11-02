@@ -64,6 +64,11 @@
 
 \begin{document}
 
+\setlength{\belowdisplayskip}{3pt} \setlength{\belowdisplayshortskip}{3pt}
+\setlength{\abovedisplayskip}{3pt} \setlength{\abovedisplayshortskip}{3pt}
+\setlength{\belowcaptionskip}{-10pt}
+\selectfont
+
 \newtheorem{theorem}{Theorem}
 \newtheorem{example}{Example}
 \newtheorem{definition}{Definition}
@@ -174,7 +179,11 @@
 \title{\sys: A Transformation-Oriented Explanation Engine}
 
 \numberofauthors{1}
-\author{ Anonymous for submission}
+\author{ Sanjay Krishnan$\,^{*}$, Michael J. Franklin$\,^{*\dag}$, Ken Goldberg$\,^{*}$, Eugene Wu{$\,^{\dag\dag}$}  \\
+\affaddr{ $^*$UC Berkeley, ~~ $^\dag$University of Chicago, ~~ $^{\dag\dag}$Columbia University} \\
+\affaddr{ \{sanjaykrishnan, franklin, goldberg\}@berkeley.edu ~~ ewu@cs.columbia.edu}\\
+\affaddr{}
+}
 
 %\fontsize{9pt}{11pt}
 %\selectfont
@@ -183,7 +192,13 @@
 \maketitle
 
 \begin{abstract}
-This paper studies the link between transformation synthesis and explaining outliers in relational data.  We present Arachnida where a user specifies an objective function  that scores records in terms of how anomalous they seem and the distributed system searches for an interpretable cleaning program (sequence of transformations) that maximally removes anomalies. This program provides an explanation of the anomalies in the sense that it is a minimal sequence of transformations that explains why those records have a high detection score. Arachnida adaptively learns a search heuristic with a logistic regression classifier to discover systematic patterns and is efficiently parallelizable. We compare Arachnida to several special-purpose systems on synthetic and real benchmarks  and find that Arachnida achieves similar accuracy and runtimes using the unified and general framework.
+Existing data cleaning systems are specialized to particular classes of data errors such as statistical outliers, constraint violations, and duplicate entities. Yet, any individual data set can exhibit can have many different types of data errors.  Managing a pipeline composed of many disparate systems is sufficiently difficult to maintain, debug, and interpret, that many data users opt to write custom scripts instead.
+Rather than focus on a specific class of errors, we propose to view all data cleaning problems within a single unified abstraction: sequential search over a language of allowable data transformations to maximize an objective function that encodes a notion of ``cleanliness''.
+This general problem is often intractable in the worst case, but 
+ recent AI successes such as Google's AlphaGo have shown that a combination of machine learning and parallelized search can solve planning problems previously considered impractical. 
+ We present \sys, a general data cleaning systems which borrows these insights to support arbitrary combinations of existing and new data errors.  We evaluated \sys against special purpose systems over 8 different datasets.  When there is a single error type, \sys matches or exceeds the accuracy of special purpose approaches and is camparable in runtime.  On multi-error datasets, \sys has 10\% higher accuracy than a naive combination of specialized systems and runs over $2\times$ faster.  Finally, our optimizations can reduce the basic search algorithm from exponential to linear runtime.
+ %We compare \sys to several special-purpose systems on 8 different dataset and find that \sys matches or exceeds their performance on real-world multi-error problems.
+ % We demonstrate that \sys achieves state-of-the-art accuracy for cleaning with denial constraints, has a 10\% higher accuracy than a naive concatenation of data cleaning approaches, and parallelization can reduce runtime by over 30x. 
 \end{abstract}
 
 
