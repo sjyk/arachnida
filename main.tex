@@ -178,23 +178,36 @@
 %\title{AlphaClean: Data Cleaning With Distributed Search and Machine Learning}
 \title{\sys: A Transformation-Oriented Explanation Engine}
 
-\numberofauthors{1}
-\author{ Sanjay Krishnan$\,^{*}$, Michael J. Franklin$\,^{*\dag}$, Ken Goldberg$\,^{*}$, Eugene Wu{$\,^{\dag\dag}$}  \\
-\affaddr{ $^*$UC Berkeley, ~~ $^\dag$University of Chicago, ~~ $^{\dag\dag}$Columbia University} \\
-\affaddr{ \{sanjaykrishnan, franklin, goldberg\}@berkeley.edu ~~ ewu@cs.columbia.edu}\\
-\affaddr{}
-}
-
+% \numberofauthors{1}
+% \author{ Sanjay Krishnan$\,^{*}$, Michael J. Franklin$\,^{*\dag}$, Ken Goldberg$\,^{*}$, Eugene Wu{$\,^{\dag\dag}$}  \\
+% \affaddr{ $^*$UC Berkeley, ~~ $^\dag$University of Chicago, ~~ $^{\dag\dag}$Columbia University} \\
+% \affaddr{ \{sanjaykrishnan, franklin, goldberg\}@berkeley.edu ~~ ewu@cs.columbia.edu}\\
+% \affaddr{}
+% }
+% 
 %\fontsize{9pt}{11pt}
 %\selectfont
+
+
+ \numberofauthors{1}
+ \author{ Sanjay Krishnan, Eugene Wu  \\
+ \affaddr{ UC Berkeley, Columbia University} \\
+ \affaddr{ sanjaykrishnan@berkeley.edu, ewu@cs.columbia.edu}\\
+ }
+ 
+\fontsize{9pt}{11pt}
+\selectfont
+
+
 
 
 \maketitle
 
 \begin{abstract}
-  Visual data exploration tools are an important part of exploratory data analysis and enable analysts to easily identify anomalous or surprising patterns and relationships that would otherwise be unnoticed.  At this point, the user will want to understand why these anomalies are present, and whether they are due to simple errors or inconsistencies in the dataset, or if they are true patterns.  Rather than forcing the analyst to switch into ``data cleaning mode'', recent work on explanation engines such as Scorpion or MacroBase have proposed automatic algorithms to propose explanations in the form of predicates over the input dataset.  If the records matching the predicate were \texttt{DELETE}-ed, then the anomalies would disappear.  This enables analysts to directly specify anomalies through the visualization and focus their attention on validating candidate explanations.  Unfortunately, real-world analysis anomalies require extensions beyond existing explanation engines.  Analyses are more complex that SQL aggregation queries, and may instead be machine learning models;  real-world datasets exhibit a combinations of different inconsistencies and errors that cannot be resolved by simple \texttt{DELETE} transformations; and analysts may want to express complex anomaly patterns such as tuples scored by a machine learning model or string formatting rules.  
+  Visual exploration tools important in exploratory data analysis and help analysts easily identify anomalous or surprising patterns/relationships that would otherwise go unnoticed. Once found, the user will want to understand why these anomalies are present, and whether they are due to simple errors/inconsistencies in the dataset, or are true patterns. Rather than forcing the analyst to switch into ``data cleaning mode'', recent work on explanation engines such as Scorpion or MacroBase have proposed automatic algorithms to propose explanations in the form of predicates over the input dataset. If the records matching the predicate were \texttt{DELETE}-ed, then the anomalies would disappear. This enables analysts to directly specify anomalies through the visualization and focus their attention on validating candidate explanations. Unfortunately, real-world analysis anomalies require extensions beyond existing explanation engines. Analyses are more complex than SQL aggregation queries, and may instead be machine learning models; real-world datasets exhibit combinations of different inconsistencies and errors that cannot be resolved by simple \texttt{DELETE} transformations, and analysts may want to express complex anomaly patterns such as tuples scored by a machine learning model or string formatting rules.
 
-  In this paper, we present \sys\footnote{A generalization of Scorpion} to address the three above limitations.  We model user-specified anomalies as generic quality functions, and explanations as a sequence of parameterized table transformations.  We formulate this as a planning problem and propose a generic tree-search algorithm to grow a sequence of table transformations that resolves user-specific anomalies by maximizing the quality function.  Although this problem is APX-hard, we show that a combination of pre-specified and adaptively learned pruning rules that exploit structure present in most real-world errors, alongside careful parallelization, allows \sys to generate explanations in near-interactive speed.
+  We present Arachnid\footnote{A generalization of Scorpion~\cite{scorpion}.} to address the three above limitations. We model user-specified anomalies as generic quality functions and explanations as a sequence of parameterized table transformations. We formulate this as a planning problem, and propose a generic tree-search algorithm to grow a sequence of transformations that resolves user-specific anomalies by maximizing the quality function. Although this problem is APX-hard, we show that a combination of pre-specified and adaptively learned pruning rules that exploit structure present in most real-world errors, alongside careful parallelization, allows Arachnid to generate explanations within seconds. 
+
 \end{abstract}
 
 

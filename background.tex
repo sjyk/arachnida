@@ -14,6 +14,7 @@ The composition of one or more data transformations is informally called an {\it
 Although $\mathbb{T}$ can in theory be an arbitrary deterministic template function, our current implementation makes several simplifying assumptions to bound the number of data transformations that it can output.  We assume that a parameter $\theta_i$ is typed as an attribute or a value.  The former means that $\theta_i$'s domain is the set of attribute names in the relation schema; the latter means that $\theta_i$'s domain is the set of cell values found in the relation, or otherwise provided by the user. 
 
 \begin{example}\label{ex1}
+To make the problem setting more clearn, let us consider a simplified example.
 The following \texttt{City} relation contains three attributes \textsf{city\_name}, \textsf{city\_code}, and \textsf{population}. Suppose this data is scraped from the web and contains a number of suspect entries.
 
   \begin{table}[ht!]
@@ -34,7 +35,7 @@ The following \texttt{City} relation contains three attributes \textsf{city\_nam
   \end{tabular}
   \end{table}
 
-Analyst 1 has a code book \texttt{Location}, that maps a \texttt{city\_code} to a region West, North East, South, Midwest. Suppose the analyst, plotted histograms for each of the regions and their min and max populations. Immediately, she recognizes that some of the values are 0 and not all of the cities are matched with the codebook. The system should be able to search over a set of transformations to rectify this issue (remove as many 0's possible, generate as many code book matches as possible).
+Analyst 1 has a code book \texttt{Location}, that maps a \texttt{city\_code} to a region West, North East, South, Midwest. Suppose the analyst plotted histograms for each of the regions and their min and max populations. Immediately, she recognizes that some of the values are 0 and not all of the cities are matched with the codebook. The system should be able to search over a set of transformations to rectify this issue (remove as many 0's possible, generate as many code book matches as possible).
 
 The following transformation template uses three parameters: \texttt{attr} specifies an attribute, \texttt{srcstr} specifies a source string, and \texttt{targetstr} specifies a target string.   
 {\small\[
@@ -86,14 +87,14 @@ These special cases are important because they can define hints on what types of
 For example, if the quality function is cell-separable, and we have identified that a set of cells $C$ are dirty (e.g., they violate constraints), then we can ignore transformations that do not modify cells in $C$.  This restricts the size the language and makes the problem much easier to solve.
 
 
-\noindent We are now ready to present data cleaning as the following optimization problem:
-\begin{problem}[$\textsf{clean}(Q,R_{dirty},L)$]
+\noindent We are now ready to present explanation synthesis as the following optimization problem:
+\begin{problem}[$\textsf{synth}(Q,R_{dirty},L)$]
 Given quality function $Q$, relation $R_{dirty}$, and language $L$, find valid program $p^* \in L$ that optimizes $Q$:
 \[
 p^* = ~ \max_{p \in L} Q( p(R_{dirty}) ).  
 \]
 \end{problem}
-$p^*(R_{dirty})$ returns the cleaned table, and $p^*$ can be applied to any table that is union compatible with $R_{dirty}$.
+$p^*(R_{dirty})$ returns the transformed table, and $p^*$ can be applied to any table that is union compatible with $R_{dirty}$.
 A desirable property of this problem formulation is that it directly trades off runtime with cleaning accuracy and can be stopped at any time (though the cleaning program may be suboptimal).  At the limit, \sys simply explores $L$ and identifies the optimal program.
 
 
