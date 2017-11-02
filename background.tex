@@ -1,5 +1,5 @@
 \section{Problem Definition}
-This section presents the basic \sys formalisms and our relationship to related work.
+This section presents the basic \sys formalisms and our relationship to related work. At a high level, \sys is an engine that is given as input \textbf{a quality specification} and  \textbf{a parametrized language of transformations}. Both of these are application specific, but can be designed from common library primitives. \sys outputs a sequence of transformations from the language to optimize the quality specification.We find that this program synthesis layer is very valuable for interactive explanations. Since an application, be it a visualization, machine learning model, or SQL query, can output which records seem faulty. For a desired class of updates to  the base data, the user can find candidate programs that best rectify these faults. 
 
 \subsection{Data Transformations}
 We focus on data transformations that concern a single relational table. 
@@ -14,25 +14,27 @@ The composition of one or more data transformations is informally called an {\it
 Although $\mathbb{T}$ can in theory be an arbitrary deterministic template function, our current implementation makes several simplifying assumptions to bound the number of data transformations that it can output.  We assume that a parameter $\theta_i$ is typed as an attribute or a value.  The former means that $\theta_i$'s domain is the set of attribute names in the relation schema; the latter means that $\theta_i$'s domain is the set of cell values found in the relation, or otherwise provided by the user. 
 
 \begin{example}\label{ex1}
-The following \texttt{City} relation contains two attributes \textsf{city\_name} and \textsf{city\_code}.  Suppose there is a one-to-one relationship between the two attributes. In this case, the relation is inconsistent with respect to the relationship and contains errors highlighted in \red{red}.
+The following \texttt{City} relation contains three attributes \textsf{city\_name}, \textsf{city\_code}, and \textsf{population}. Suppose this data is scraped from the web and contains a number of suspect entries.
 
   \begin{table}[ht!]
 	\small
   \centering
   \label{my-label}
-  \begin{tabular}{|l|l|l|}
+  \begin{tabular}{|l|l|l|l|}
   \hline
   \rowcolor[HTML]{000000} 
-  & \white{city\_name}            & \white{city\_code}   \\ \hline
-  1 & San Francisco                    & SF                                  \\ \hline
-  2& \red{\textbf{New York}}           & NY                                  \\ \hline
-  3 & New York City                    & \red{\textbf{NYC}} \\ \hline
-  4 & \red{\textbf{San Francisc}}      & SF                                  \\ \hline
-  5 & San Jose                         & SJ                                  \\ \hline
-  6 & San Mateo                        & SM                                  \\ \hline
-  7 & New York City                    & NY                                  \\ \hline
+  & \white{city\_name}            & \white{city\_code} & \white{population}   \\ \hline
+  1 & San Francisco                    & SF    & 864,816                              \\ \hline
+  2& \red{\textbf{New York}}           & NY  & 8,538,000                                \\ \hline
+  3 & New York City                    & \red{\textbf{NYC}} & 8,491,000  \\ \hline
+  4 & \red{\textbf{San Francisc}}      & SF & \red{859k}                             \\ \hline
+  5 & San Jose                         & SJ   & 997,811                               \\ \hline
+  6 & San Mateo                        & SM   & 57,194                                \\ \hline
+  7 & New York City                    & NY   & \red{0}                              \\ \hline
   \end{tabular}
   \end{table}
+
+Analyst 1 has a code book \texttt{Location}, that maps a \texttt{city\_code} to a region West, North East, South, Midwest. Suppose the analyst, plotted histograms for each of the regions and their min and max populations. Immediately, she recognizes that some of the values are 0 and not all of the cities are matched with the codebook. The system should be able to search over a set of transformations to rectify this issue (remove as many 0's possible, generate as many code book matches as possible).
 
 The following transformation template uses three parameters: \texttt{attr} specifies an attribute, \texttt{srcstr} specifies a source string, and \texttt{targetstr} specifies a target string.   
 {\small\[
@@ -40,6 +42,18 @@ T = \textsf{find\_replace}(\text{srcstr}, \text{targetstr}, \text{attr})
 \]}
 The output of the above is a transformation $T$ that finds all \texttt{attr} values equal to \texttt{srcstr} and replaces those cells with \texttt{targetstr}. 
 For instance, \texttt{find\_replace(``NYC'', ``NY'', ``city\_code'')(City)} returns a data transformation that finds records in \texttt{City} whose city\_code is ``NYC'' and replaces their value with ``NY''.
+There is additionally a numerical transform that sets the mean over all non-zero entries as default value in the attribute.
+{\small\[
+T = \textsf{set\_default}(\text{srcvalue}, \text{attr})
+\]}
+
+
+There are multiple ways one might define anomalies in this dataset. Analyst 2 might consider using SQL views. She defines a set of functional dependencies creating one-to-one relationships between the city name and code, and an FD relationship between city and population. This defines another type of quality specification. She uses a transformation template that that applies mappings over all possible predicates not just within a single attribute: 
+{\small\[
+T = \textsf{replace}(\text{src\_predicate}, \text{targetstr})
+\]}
+
+We would like to capture both these scenarios in the same general framework
 \end{example}
 
 
@@ -90,12 +104,6 @@ By searching through all possible programs up to length 3 in $L$, we can find a 
     find_replace(NYC, NY, city_code)
 \end{lstlisting}
 \end{example}
-
-
-\subsection{Problem Expressiveness}\label{s:probexpressiveness}
-
-\subsection{Case Studies}
-\textbf{TODO}
 
 \subsection{Approach Overview and Challenges}
 Our problem formulation is a direct instance of {\it planning} in AI~\cite{russell1995modern}, where an agent identifies a sequence of actions to achieve a goal.  In our setting, the agent (\sys) explores a state space ($\mathcal{R}$) from an initial state (the input relation) by following transitions (applying $T_i \in \Sigma$) such that the sequence of actions is valid (within $\Sigma^*$) and the quality of the final state ($Q(R_{final})$) is maximized.  
