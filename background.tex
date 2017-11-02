@@ -68,14 +68,19 @@ A program $p$ is valid if it is an element of $L$.
 
 Finally, let $Q(R): \mathcal{R} \mapsto [0,1]$ be a quality function where $1$ implies that the instance $R$ has no anomalies, and a lower value correspond to a more anomalies table.
 Since running a program $p\in\mathcal{L}$ on the initial dirty table $R_{dirty}$ returns another table, $Q(p(R_{dirty}))$ returns a quality score for each program in the language.  
-$Q$ is a UDF and we do not impose any restrictions on it. In fact, one experiment embeds training and evaluating a machine learning model {\it within} the quality function (\Cref{s:expquant}).  Another experiment shows that \sys can be robust to random noise injected in the function (\Cref{s:expoverfit}).   
+$Q$ is a UDF and we do not impose any restrictions on it. We call this term the edit cost $E(R)$. For example, if we added a term that penalized edit distance between cell transformations in the examples above, mapping \texttt{NYC} to \texttt{NY} is more desirable than \texttt{NYC} to \texttt{SF}.
+In fact, one experiment embeds training and evaluating a machine learning model {\it within} the quality function (\Cref{s:expquant}).  Another experiment shows that \sys can be robust to random noise injected in the function (\Cref{s:expoverfit}).   
 
-Even so, we call out two special cases that provide optimization opportunities. 
+We call out two special cases that provide optimization opportunities. 
 We define two sub-classes of quality functions: row-separable and cell-separable quality functions.
 The former expresses the overall quality based on row-wise quality function $q(r): R \mapsto [0,1]$ where $1$ implies that the record is clean:
 $Q(R) \propto \sum\nolimits_{r \in R} q(r)$
 Similarly, a cell-separable quality function means that there exists a cell-wise quality function $q(r, a): (R\times A) \mapsto [0,1]$, such that the quality function is the sum of each cell's quality: 
 $Q(R) \propto \sum\nolimits_{r \in R} \sum_{a \in A} q(r,a)$.
+In practice, the quality functions also include terms to penalize overly large edits to the database:
+\[
+Q(R) - \lambda E(R)
+\]
 
 These special cases are important because they can define hints on what types of transformations are irrelevant.
 For example, if the quality function is cell-separable, and we have identified that a set of cells $C$ are dirty (e.g., they violate constraints), then we can ignore transformations that do not modify cells in $C$.  This restricts the size the language and makes the problem much easier to solve.

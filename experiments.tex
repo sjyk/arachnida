@@ -8,7 +8,7 @@
 %Existing datasets
 
 \section{Experiments}\label{s:exp}
-Next, we present experimental results. 
+To the best of our knowledge a comparable explanation system to \sys does not exist, so we evaluate \sys in a comprehensive study against reasonable baselines. This meant piecing together data cleaning and outlier detection systems into pipelines (sometimes combining them with learning) to illustrate the benefits of \sys.  
 
 \subsection{Synthetic Data}
 In the first set of experiments, we characterize \sys on synthetic data. We generate a dataset with the following schema:
@@ -17,8 +17,9 @@ City(Name, Abreviation, Population)
 \end{lstlisting}
 Names are randomly generated from a set of strings scraped from wikipedia, abbreviations are generated from two letters randomly selected from the names, and populations are generated via a Zipfian distribution. This dataset considers multiplicities where there are duplicate (non-erroneous) records.
 
+\stitle{Anomalies}
 We consider a number of different anomaly detection criteria:
-\begin{itemize}
+\begin{itemize}[leftmargin=*, topsep=0mm, itemsep=0mm]
     \item \textbf{Q1: } All records that violate a one-to-one mapping constraint between \texttt{Name} and \texttt{Abbrevation}. This is a standard functional dependency constraint to detect anomalies~\cite{DBLP:conf/sigmod/ChalamallaIOP14}.
     \item \textbf{Q2: } All records with a population greater than 6 median absolute deviations from the median population. This is a standard quantitative outlier detection condition to detect anomalies~\cite{bailis2016macrobase,scorpion}. 
     \item \textbf{Q3: } All records whose abbreviation has a string length not equal to two. This is a more complex UDF that cannot be addressed by existing work.
@@ -26,8 +27,10 @@ We consider a number of different anomaly detection criteria:
 For each of these anomaly detection criteria, we generate errors in the dataset. For Q1, we select a random subset of each of the records with a particular name and perturb the \texttt{Abbrevation} attribute. For Q2, we randomly generate populations with a population of 0 or one that is much higher than typical and replace a subset of records that satisfy a equality predicate on either \texttt{Name} and \texttt{Abbrevation} or both.
 For Q3, we randomly add characters to some records abbrevations.
 
+\stitle{Language}
 We consider different parametrized languages for transformations:
-\begin{itemize}
+\begin{itemize}[leftmargin=*, topsep=0mm, itemsep=0mm]
+
     \item \textbf{D1: } All deletions with a single attribute equality predicate.
 
     \item \textbf{D: } All deletions with a multiple attribute equality predicate. This setting of \sys is the most similar to prior outlier explanation work.
@@ -40,30 +43,30 @@ We consider different parametrized languages for transformations:
 \end{itemize}
 
 \subsubsection{Absolute Runtime and Accuracy}
-Due to the way that we generated errors, we have a natural notion of ground truth. We know the predicates and transformations used the generate errors, and we can calculate the precision and recall. For a generated dataset of 10000 records, we tuned the error generation process such that approximately 5\% of records are corrupted. The tables (Table \ref{t1} and Table \ref{t2}) show the F1 score of \sys for all combinations of languages and detectors and the runtimes for each of the modes in seconds. We indicate modes for further comparison with existing work. 
+Due to the way that we generated errors, we have a natural notion of ground truth. We know the predicates and transformations used the generate errors, and we can calculate the precision and recall. For a generated dataset of 10000 records, we tuned the error generation process such that approximately 5\% of records are corrupted. The tables (Table \ref{t1} and Table \ref{t2}) show the F1 score of \sys for all combinations of languages and detectors and the runtimes for each of the pairs in seconds. 
+We use `*' to indicate combinations that are comparable with prior explanation and cleaning systems. 
 
 \sys provides flexibility to the user the change the language and the quality functions to elict different behaviors. For example, the R and R1 languages are not suited for numerical manipulation. The M language can be used to improve accuracy. The runtime of \sys largely depends on how large the support of the language is. More carefuly designed languages lead to faster and more accurate transformation programs. More complex quality functions only impact runtime in terms of how expensive they are to compute.
 
 \begin{table}[t]
 \centering
-\caption{The F1 score of \sys for all languages and detector combinations. The starred entries are settings of \sys where there is a plausible comparision with another existing system.}
-\label{t1}
 \begin{tabular}{
 >{\columncolor[HTML]{000000}}l llll}
 {\color[HTML]{FFFFFF} }   & \cellcolor[HTML]{000000}{\color[HTML]{FFFFFF} Q1} & \cellcolor[HTML]{000000}{\color[HTML]{FFFFFF} Q2} & \cellcolor[HTML]{000000}{\color[HTML]{FFFFFF} Q3} & \cellcolor[HTML]{000000}{\color[HTML]{FFFFFF} Q123} \\
 {\color[HTML]{FFFFFF} D1} & 1.0                                               & 0.89                                              & 1.0                                               & .88                                                 \\
 {\color[HTML]{FFFFFF} D}  & 0.84                                              & .86*                                              & 1.0                                               & .79                                                 \\
-{\color[HTML]{FFFFFF} R1} & 1.0*                                              & {\color[HTML]{000000} .71}                        & 1.0                                               & .86                                                 \\
-{\color[HTML]{FFFFFF} R}  & 0.83                                              & .68                                               & 1.0                                               & .77                                                 \\
+{\color[HTML]{FFFFFF} R1} & 1.0                                              & {\color[HTML]{000000} .71}                        & 1.0                                               & .86                                                 \\
+{\color[HTML]{FFFFFF} R}  & 0.83*                                              & .68                                               & 1.0                                               & .77                                                 \\
 {\color[HTML]{FFFFFF} M}  & -                                                 & 1.0                                               & -                                                 & -                                                  
 \end{tabular}
+\caption{The F1 score of \sys for all languages and detector combinations. The starred entries are settings of \sys for which a comparable system exists.}
+\label{t1}
 \end{table}
 
 
 \begin{table}[t]
 \centering
-\caption{The runtime of \sys for all languages and detector combinations. The starred entries are settings of \sys where there is a plausible comparision with another existing system.}
-\label{t2}
+\vspace{.2in}
 \begin{tabular}{
 >{\columncolor[HTML]{000000}}l llll}
 {\color[HTML]{FFFFFF} }   & \cellcolor[HTML]{000000}{\color[HTML]{FFFFFF} Q1} & \cellcolor[HTML]{000000}{\color[HTML]{FFFFFF} Q2} & \cellcolor[HTML]{000000}{\color[HTML]{FFFFFF} Q3} & \cellcolor[HTML]{000000}{\color[HTML]{FFFFFF} Q123} \\
@@ -73,18 +76,20 @@ Due to the way that we generated errors, we have a natural notion of ground trut
 {\color[HTML]{FFFFFF} R}  & 107.8*                                             & 59.4                                              & 69.3                                              & 136.9                                               \\
 {\color[HTML]{FFFFFF} M}  & -                                                 & 0.17                                              & -                                                 & -                                                  
 \end{tabular}
+\caption{The runtime of \sys for all languages and detector combinations. The starred entries are settings of \sys for which a comparable system exists.}
+\label{t2}
 \end{table}
 
 \begin{figure*}
     \centering
     \includegraphics[width=0.8\textwidth]{exp/exp1-new.png}
-    \caption{\small Comparison with outlier explanation systems. \label{exp1-new}}
+    \caption{\small Comparison with outlier explanation systems. While, \sys is more general, it is also competitive in terms of accuracy. \label{exp1-new}}
 \end{figure*}
 
 \begin{figure*}
     \centering
     \includegraphics[width=0.8\textwidth]{exp/exp2-new.png}
-    \caption{\small Comparison with FD repair systems. \label{exp2-new}}
+    \caption{\small Comparison with FD repair systems. As with the outlier explanations, \sys is more general, it is also competitive in terms of accuracy.\label{exp2-new}}
 \end{figure*}
 
 \subsubsection{Comparison to Specialized Systems}
@@ -106,7 +111,6 @@ Beyond the characterization, we consider 7 case studies applying \sys to real pr
 
 \stitle{Flight} The flight dataset~\cite{data-flights} contains arrival time, departure time, and gate information aggregated from 3 airline websites (AA, UA, Continental), 8 airport websites (e.g., SFO, DEN), and 27 third-party websites.
 There are 1200 flight departures and arrivals at airline hubs recorded from each source.  Each flight has a unique and globally consistent ID, and the task is to reconcile data from different sources using the functional dependency \texttt{ID$\rightarrow$ arrival, departure, gate information}.
-
 
 \stitle{FEC} The election contributions dataset has 6,410,678 records, and 18 numerical, discrete, and text attributes. This dataset records the contribution amount and contributor demographic information e.g., name, address, and occupation.  The task is to enforce \texttt{city$\rightarrow$zipcode}, and match occupation to a codebook on canonical occupations.  The quality function is 1 if the occupation is in the codebook, and 0 otherwise; we penalize the edit distance between the original and edited occupation values.
 
@@ -132,18 +136,19 @@ We downloaded this dataset and sought to understand whether terrorist attacks ha
     \caption{\small Comparison with denial constraint systems on the Flight dataset.  (A) \sys (AC) matches or exceeds the accuracy of the specialized systems.  (B) The structure of the data errors, along the learning and parallelization (AC+L x64) lets \sys scale sub-linearly and outperform all but HoloClean's reported runtimes.  \label{exp1a}}
 \end{figure}
 
-\subsection{Constraint Violations}
-Denial constraints express a wide range of integrity constraints and form the basis of many data cleaning systems.  We can compose a quality function that quantifies the number of constraint violations and find transformations that reduce the number of violations. For \sys, we search over single attribute find and replace transformations (R1 in the synthetic experiments). We quantify the precision and recall of the transformations discovered. We use the Flight dataset for these experiments. 
+\subsection{Detecting Anomalies with Constraints}
+In the first set of case studies, we consider the Flight, Physician, FEC, and Malasakit datasets. In these datasets, the errors can be effectively detected as denial constraints. Denial constraints express a wide range of integrity constraints and form the basis of many data cleaning systems.  One can imagine a user interactively generating these constraints and observing what types of transformations are generated to enforce the constraints. We can compose a quality function that quantifies the number of constraint violations and find transformations that reduce the number of violations. For \sys, we search over single attribute find and replace transformations (R1 in the synthetic experiments). We quantify the precision and recall of the transformations discovered. 
 
-\stitle{Baselines} We run against (1) Llunatic, a denial constraint-based cleaning system~\cite{DBLP:conf/sigmod/DallachiesaEEEIOT13} implemented in C++ on top of PostgreSQL\footnote{Constraints are specified as Tuple-Generating Dependencies}, and (2) a restricted chase algorithm~\cite{benedikt2017benchmarking} implemented in Python. We compare against the chase because a large portion of denial constraints are functional dependencies, and can be resolved using fixed-point iteration.  We report numbers from the recent Holoclean publication~\cite{rekatsinas2017holoclean} that used the same datasets and constraints, but did not run the experiment ourselves.
+\stitle{Baselines}  We tried to piece together explanation pipelines using existing data cleaning software, i.e., generate a cleaned instance for each constraint and then infer rules from those instances (as in the synthetic experiment). We compare \sys on instance-level accuracy to gold standard ground truth cleaned by hand. We run against (1) Llunatic, a denial constraint-based cleaning system~\cite{DBLP:conf/sigmod/DallachiesaEEEIOT13} implemented in C++ on top of PostgreSQL\footnote{Constraints are specified as Tuple-Generating Dependencies}, and (2) a restricted chase algorithm~\cite{benedikt2017benchmarking} implemented in Python. We compare against the chase because a large portion of denial constraints are functional dependencies, and can be resolved using fixed-point iteration.  We report numbers from the recent Holoclean publication~\cite{rekatsinas2017holoclean} that used the same datasets and constraints, but did not run the experiment ourselves.
 
 \stitle{Results} Figure \ref{exp1a}a shows the precision and recall of each approaches based on known ground truth. \sys matches or beats the accuracy of the baselines, however its runtime (AC) without any learning scales poorly compared to alternatives (Figure~ \ref{exp1a}b).  Using learning (AC+L) shows performance on par with LLunatic, and parallelization on 64 threads is comparable to Holoclean's reported runtime. The results suggest that learning exhibits sublinear scaling due to \sys learning more effective pruning rules as it sees more data.  These performance gains are at the expense of slightly reduced accuracy. 
 
-We also evaluated \sys (single threaded, without learning) on the FEC, Malasakit, and Physician datasets.  Their precision, recall, and runtimes are as follows: 
-FEC: $94\%$ prec, $68\%$ rec, $5$hrs; 
-Malasakit: $100\%$ prec, $85\%$ rec, $0.39$hrs;
-Physician: $100\%$ prec, $84\%$, $3.4$hrs.
+There are both positives and negatives in these results. \sys is slow compared to the specialized solutions but greatly reduces the engineering complexity of having to design them and compose them with a rule extraction interface. More research is needed into this class of algorithms in the future to reduce the runtime gap.
 
+We also evaluated \sys (single threaded, without learning) on the FEC, Malasakit, and Physician datasets.  Their precision, recall, and runtimes are as follows: 
+FEC: $94\%$ prec, $68\%$ rec; 
+Malasakit: $100\%$ prec, $85\%$ rec;
+Physician: $100\%$ prec, $84\%$.
 
 \begin{figure}
     \centering
@@ -151,7 +156,7 @@ Physician: $100\%$ prec, $84\%$, $3.4$hrs.
     \caption{\small Numerical Transformations on census and EEG datasets for a classification application.  \sys tranformation can clip outliers or set them to a default value. (A) \sys has a higher accuracy than outlier detection algorithms (MCD, dBoost), and \sys with a single transform template (DO).  (B) Optimizations improve \sys runtime by over an order of magnitude.  \label{exp2a}}
 \end{figure}
 
-\subsection{Numerical Transformations}\label{s:expquant}
+\subsection{Detecting Anomalies with Models}\label{s:expquant}
 This experiment performs numerical transformations on machine learning data.  We explore to what extent the transformations provided by \sys can be used to improve the performance of a downstream data product such as machine learning. In these applications, prediction labels and test records are typically clean and available (e.g., results of a sales lead), whereas the training features are often integrated from disparate sources and exhibit considerable noise (e.g., outliers).  Our quality function is simply defined as the model's accuracy on a training hold-out set, and we report the test accuracy on a separate test set.
 
 We trained a binary classification random forest model using \texttt{sklearn} on the Census and EEG datasets.  We used standard featurizers (hot-one encoding for categorical data, bag-of-words for string data, numerical data as is) similar to~\cite{gokhale2014corleone}. 
@@ -167,10 +172,10 @@ We defined the following three data transformation templates that sets numerical
 \end{itemize}
 }
 
-\stitle{Baselines} We compare with 4 baselines: {\it No Transformation (NC)}, {\it Minimum Covariance Determinant (MCD)} is a robust outlier detection algorithm used in~\cite{bailis2016macrobase} and sets all detected outliers to the mean value, {\it dBoost} uses a fast partitioned histogram technique to detect outliers~\cite{mariet2016outlier}, and {\it Default Only (DO)} runs \sys with only the \textsf{default()} transformation.  
+\stitle{Baselines} As before, we constructed best effort pipelines with existing tools. Composing outlier detection software with reasonable default transformations. These tools leverage the data to identify outliers, while \sys leverages the quality function (i.e., the model's own confidence metric).
+We compare with 4 baselines: {\it No Transformation (NC)}, {\it Minimum Covariance Determinant (MCD)} is a robust outlier detection algorithm used in~\cite{bailis2016macrobase} and sets all detected outliers to the mean value, {\it dBoost} uses a fast partitioned histogram technique to detect outliers~\cite{mariet2016outlier}, and {\it Default Only (DO)} runs \sys with only the \textsf{default()} transformation.  
 
 \stitle{Results} The classifer achieves 82\% and 79\% accuracy on the uncleaned census and EEG data, respectively.  Most outliers in the census data are far from the mean, so MCD and dBoost can effectively find.  Further, setting census outliers to the mean is sensible. However, the same fix is not appropriate for the EEG data; it is better to clip the outlier values, thus MCD, dBoost, and DO have negligible or negative impact on accuracy.  When we realized this from running DO, it was straightforward to add the clipping transformations to the language, and with no other changes, re-run \sys with drastically improved EEG accuracies.  
-
 Vanilla \sys (AC) is nearly $10\times$ slower than MCD, but the adding learning and 16-thread parallelization  matches MCD's runtimes.  dBoost is specialized for fast outlier detection and \sys is unlikely to match its runtime.  
 
 
@@ -181,23 +186,15 @@ Vanilla \sys (AC) is nearly $10\times$ slower than MCD, but the adding learning 
 \end{figure}
 
 \subsection{Mixing Error Classes}\label{s:expterror}
-This experiment, we use the multi-error Terrorism dataset~\cite{data-terrorism}. 
+The power of \sys is seen in datasets where there are multiple types of anomalies.
+We use the multi-error Terrorism dataset as such an example ~\cite{data-terrorism}. 
 
-\stitle{Baselines} We hand-coded blocking-based entity matching (EM)  and restricted chase (FD) algorithms in Python, and used dBoost for missing values.  We also ran EM, dBoost, and Chase serially on the dataset (Combined). We use that combination to generate transformation explanations.
-
-%algorithm that uses blocking to handle duplicate records.  We modeled the missing values as an outlier cleaning problem and used the dBoost~\cite{} library (dBoost). We modeled the location inconsistencies as a functional dependency problem and implemented a restricted chase algorithm (Chase).  
+\stitle{Baselines} We constructed a pipeline consisting of a hand-coded blocking-based entity matching (EM), a restricted chase (FD) algorithm in Python, and used dBoost for missing values.  We ran EM, dBoost, and Chase serially on the dataset (Combined). We use that combination to generate transformation explanations.
+This is compared to \sys where there is one framework with different quality functions. We use a library of transformation consisting of find-and-replace operations as well as the numerical transformations described previously.
 
 
 \stitle{Results} \Cref{exp7a}a shows that combining  all three classes of errors within the same \sys framework (AC) achieves higher precision and recall than all baselines.  In fact, the combined baselines still does not achieve \sys's level of accuracy because the  operations need to be interleaved differently for different blocks.   Although \sys is slower than any individual baseline, parallelizing \sys to 8 threads is faster than the combined baseline by 2x. 
 
-
-% Error type (1) is best handled with a blocking and matching entity matching approach. Error type (2) is best handled with an outlier detector, where outliers are replaced with null values. Error type (3) is best addressed by a Functional Dependency.
-% Figure \ref{exp7a}a shows how each individual system is not sufficient to clean the data.
-% For (1) and (3), we coded a specialized algorithm in Python to address those errors.
-% For (2), we used the dBoost library.
-% \sys can model all of these in a single framework and can get the best combined performance.
-% \sys achieves the highest precision and recall.
-% \sys also achieves a competitive runtime to using all of the different system and accounting for data transfer time between them.
 
  \begin{figure*}[t]
 \centering
@@ -215,7 +212,6 @@ This experiment, we use the multi-error Terrorism dataset~\cite{data-terrorism}.
    (C) Best-first search is better than BFS and DFS; reducing $\gamma$ prunes more candidates at the expense of lower accuracy.  
  \label{fig:opt}}
 \end{figure*}
-
 
 \subsection{\sys In Depth}
 This subsection uses the FEC setup to study the parameters that affect \sys's accuracy and runtime, the robustness of its transformation programs, and its algorithmic properties.
@@ -242,8 +238,6 @@ We evaluate this by artificially coupling between 1-10 records together, and cre
 % \sys quickly learns a model which learns this correlation and uses that to prune the search space.
 
 \stitle{Quality Function Complexity} Finally, we incrementally increase the quality function's complexity and show haw it affects the accuracy.  We add the following constraints in sequence: one functional dependency (FD), a second FD, an entity resolution similarity rule, and a third FD.  We define the quality function as the sum of each constraint's quality function.   \Cref{fig:microbenchmarks}d shows that the F1 accuracy decreases as more constraints are added, however the F1 score is still above $75\%$.  
-
-
 
 
 \subsubsection{Generalization and Overfitting}\label{s:expoverfit}

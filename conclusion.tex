@@ -1,7 +1,16 @@
 \section{Conclusion and Future Work}
-In summary, \sys poses explanation generation as a planning problem over a language of data transformations, and presents existing error-specific approaches---constraint-based, statistical, and demonstration-based data cleaning---within a single framework.
-Our results suggest that borrowing from recent advances in planning and optimization is a fruitful direction.  
-While we focus on explanation in this work, we are excited to extend \sys towards data cleaning system.  In particular, data cleaning is inherently a visual and interactive process, and we plan to integrate \sys with a data visualization interface.   Users can visually manipulate and examine their dataset and the system can translate interactive manipulations into quality functions.  This will also require work to characterize failure modes and provide high level tools to debug such cases.  We are also hopeful that the compact codebase (<200 LOC for the core search and learning algorithms) can enable more rapid development of specialized data cleaning systems for novel domains and error conditions.  
+In this paper, we proposed a generalized explanation engine called \sys that serves as the basis for 
+future interactive visualizations systems that can explore, visualization, and explain.
+\sys poses explanation generation as a planning problem over a language of data transformations in order to consider datasets with combinations of systematic errors.
+It also expresses existing error-specific approaches---constraint-based, statistical, and demonstration-based data cleaning---within a single, generic search framework. 
+The reason for this generic approach is to provide the flexibility to easily specifying different types of output anomalies, and mix-and-match the types of errors to consider.
+Although this search problem is theoretically very challenging, our results suggest that borrowing from recent advances in planning and optimization is a fruitful direction.  
+
+This work primarily focused on the core explanation engine, and sketched ways that users may express anomalies througha visualization interface.
+Our immediate plans are to develop an interaction language to express a comprehensive class of anomalies that can be found in BI and machine learning model visualizations. 
+This will also require work to characterize failure modes and provide high-level tools to debug such cases.  
+We are also hopeful that the compact codebase (<200 LOC for the core search and learning algorithms) can enable more rapid development of specialized data cleaning systems for novel domains and error conditions.  
+
 
 
 
